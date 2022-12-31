@@ -1,0 +1,10 @@
+{% extends 'simulator/base.html' %}
+{% load crispy_forms_tags %}
+{% block content %}
+<form action="" method="post">
+    {% csrf_token %}
+    {{ form|crispy }}
+    <input type="submit" value="submit and run simulation">
+    <input type="button" value="back to main" onclick="window.location.href='{% url 'simulator:main' %}'">
+</form>
+{% endblock %}

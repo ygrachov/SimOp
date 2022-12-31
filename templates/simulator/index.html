@@ -1,0 +1,6 @@
+{% extends 'simulator/base.html' %}
+{% block content %}
+<h1>HELLO WORLD</h1>
+{{ greetings }}<p>
+<input type="button" value="enter my variables" onclick="window.location.href='{% url 'simulator:form' %}'">
+{% endblock %}

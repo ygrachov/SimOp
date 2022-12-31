@@ -1,0 +1,12 @@
+{% extends 'simulator/base.html' %}
+{% block content %}
+<h1>Your input: </h1>
+{% for key, value in myvars.items %}
+{{key}} - {{value}}<p>
+    {% endfor %}
+<input type="button" value="Edit input" onclick="window.location.href='{% url 'simulator:update' myvars.id %}'">
+<form action='{% url "simulator:launch" %}' method="POST">
+{% csrf_token %}
+  <input value="Confirm & Run" type="submit">
+</form>
+{% endblock %}
