@@ -1,13 +1,14 @@
 from django.shortcuts import render, redirect, get_object_or_404
 from django.views import View
 from django.forms import ModelForm
-from django.http import request,response
 from django.urls import reverse, reverse_lazy
-import pandas as pd
 import simpy
 from . import models
 import random
 from django.views.generic import UpdateView
+from datetime import datetime
+from django.http import HttpResponse
+import csv
 
 class InputForm(ModelForm):
     class Meta:
@@ -24,6 +25,7 @@ class GetVars(View):
     success_url = reverse_lazy('simulator:success')
 
     def get(self, request):
+        models.CreateInput.objects.all().delete()
         context = {'form': InputForm()}
         return render(request, template_name=self.template_name, context=context)
 
@@ -32,181 +34,142 @@ class GetVars(View):
         form.save()
         return redirect(self.success_url)
 
-# Create your views here.
-class Globals:
-    # TODO add prediction mode: reducing number of line upon resources availability
-    # TODO add light computations for big simulations
-    #assign variable from model just before simulation
-    """stores variables used for simulation. It can simulate either a period of time or certain number of calls"""
-    env = simpy.Environment()
-    # how many times the whole process is reproduced
-    number_of_simulations = models.CreateInput.objects.values('number_of_simulations').last()['number_of_simulations']
-    # how many lines are available for dialer
-    line_numbers = models.CreateInput.objects.values('line_numbers').last()['line_numbers']
-    # total shift
-    number_jf_agents = models.CreateInput.objects.values('number_jf_agents').last()['number_jf_agents']
-    # time being simulated in sec: number or None
-    shift_time = models.CreateInput.objects.values('shift_time').last()['shift_time']
-    # number of customers to be served
-    call_list = models.CreateInput.objects.values('call_list').last()['call_list']
-    # time required to take and dial a batch(high, low, mode)
-    take_high = models.CreateInput.objects.values('take_high').last()['take_high']
-    take_low = models.CreateInput.objects.values('take_low').last()['take_low']
-    take_mode = models.CreateInput.objects.values('take_mode').last()['take_mode']
-    # the share of unsuccessful attempts in batch (high, low, mode)
-    unreachable_h = models.CreateInput.objects.values('unreachable_h').last()['unreachable_h']
-    unreachable_l = models.CreateInput.objects.values('unreachable_l').last()['unreachable_l']
-    unreachable_m = models.CreateInput.objects.values('unreachable_m').last()['unreachable_m']
-    # time between point of call starts ringing and call gets answered or cancelled (high, low, mode)
-    ring_time_h = models.CreateInput.objects.values('ring_time_h').last()['ring_time_h']
-    ring_time_l = models.CreateInput.objects.values('ring_time_l').last()['ring_time_l']
-    ring_time_m = models.CreateInput.objects.values('ring_time_m').last()['ring_time_m']
-    # share of reached customers from those who received a call (high, low, mode)
-    reach_rate_h = models.CreateInput.objects.values('reach_rate_h').last()['reach_rate_h']
-    reach_rate_l = models.CreateInput.objects.values('reach_rate_l').last()['reach_rate_l']
-    reach_rate_m = models.CreateInput.objects.values('reach_rate_m').last()['reach_rate_m']
-    # answering machine clearance duration parameters (high, low, mode)
-    d_h = models.CreateInput.objects.values('d_h').last()['d_h']
-    d_l = models.CreateInput.objects.values('d_l').last()['d_l']
-    d_m = models.CreateInput.objects.values('d_m').last()['d_m']
-    # customer's patience parameter (high, low)
-    p_h = models.CreateInput.objects.values('p_h').last()['p_h']
-    p_l = models.CreateInput.objects.values('p_l').last()['p_l']
-    # talk time parameters (high, low)
-    t_h = models.CreateInput.objects.values('t_h').last()['t_h']
-    t_l = models.CreateInput.objects.values('t_l').last()['t_l']
-    # clerical time parameters (high, low)
-    c_h = models.CreateInput.objects.values('c_h').last()['c_h']
-    c_l = models.CreateInput.objects.values('c_l').last()['c_l']
-    # dataframe to record statistics on each call
-    results = pd.DataFrame()
-
 
 class CallCenter:
     """represents call center """
-
     def __init__(self, simulation_number):
         self.name = 0
-        self.capacity = Globals.number_jf_agents
-        self.agent = simpy.Resource(Globals.env, capacity=self.capacity)
         self.simulation_number = simulation_number
-        self.call_list = [i for i in range(1, Globals.call_list + 1)]
+        self.call_list = models.CreateInput.objects.values('call_list').last()['call_list']
+        self.call_list = [i for i in range(1, self.call_list + 1)]
         self.batch = 1
+        self.env = simpy.Environment()
+        # how many times the whole process is reproduced
+        # how many lines are available for dialer
+        self.line_numbers = models.CreateInput.objects.values('line_numbers').last()['line_numbers']
+        # total shift
+        self.capacity = models.CreateInput.objects.values('number_jf_agents').last()['number_jf_agents']
+        self.agent = simpy.Resource(self.env, capacity=self.capacity)
+        # time being simulated in sec: number or None
+        self.shift_time = models.CreateInput.objects.values('shift_time').last()['shift_time']
+        # time required to take and dial a batch(high, low, mode)
+        self.take_high = models.CreateInput.objects.values('take_high').last()['take_high']
+        self.take_low = models.CreateInput.objects.values('take_low').last()['take_low']
+        self.take_mode = models.CreateInput.objects.values('take_mode').last()['take_mode']
+        # the share of unsuccessful attempts in batch (high, low, mode)
+        self.unreachable_h = models.CreateInput.objects.values('unreachable_h').last()['unreachable_h']
+        self.unreachable_l = models.CreateInput.objects.values('unreachable_l').last()['unreachable_l']
+        self.unreachable_m = models.CreateInput.objects.values('unreachable_m').last()['unreachable_m']
+        # time between point of call starts ringing and call gets answered or cancelled (high, low, mode)
+        self.ring_time_h = models.CreateInput.objects.values('ring_time_h').last()['ring_time_h']
+        self.ring_time_l =models.CreateInput.objects.values('ring_time_l').last()['ring_time_l']
+        self.ring_time_m = models.CreateInput.objects.values('ring_time_m').last()['ring_time_m']
+        # share of reached customers from those who received a call (high, low, mode)
+        self.reach_rate_h = models.CreateInput.objects.values('reach_rate_h').last()['reach_rate_h']
+        self.reach_rate_l = models.CreateInput.objects.values('reach_rate_l').last()['reach_rate_l']
+        self.reach_rate_m = models.CreateInput.objects.values('reach_rate_m').last()['reach_rate_m']
+        # answering machine clearance duration parameters (high, low, mode)
+        self.d_h = models.CreateInput.objects.values('d_h').last()['d_h']
+        self.d_l =models.CreateInput.objects.values('d_l').last()['d_l']
+        self.d_m =models.CreateInput.objects.values('d_m').last()['d_m']
+        # talk time parameters (high, low)
+        self.t_h = models.CreateInput.objects.values('t_h').last()['t_h']
+        self.t_l = models.CreateInput.objects.values('t_l').last()['t_l']
+        # clerical time parameters (high, low)
+        self.c_h = models.CreateInput.objects.values('c_h').last()['c_h']
+        self.c_l =models.CreateInput.objects.values('c_l').last()['c_l']
+
 
     def dial(self):
         counter = 0
-        while len(self.call_list) > 0:
-            batch_result = pd.DataFrame()
-            start = Globals.env.now
+        while len(self.call_list) > 0 and self.env.now < self.shift_time:
+            start = self.env.now
             spin = counter / len(self.call_list)
-            batch = [i for y, i in enumerate(self.call_list) if y + 1 <= Globals.line_numbers]
+            batch = [i for y, i in enumerate(self.call_list) if y + 1 <= self.line_numbers]
             self.call_list = [i for i in self.call_list if i not in batch]
             for i in batch:
                 counter += 1
-                batch_result.loc[i, 'run'] = self.simulation_number + 1
-                batch_result.loc[i, 'attempt_no'] = counter
-                batch_result.loc[i, 'call_no'] = i
-                batch_result.loc[i, 'batch'] = self.batch
-                batch_result.loc[i, 'spin'] = spin
-                batch_result.loc[i, 'capacity'] = self.capacity
-                batch_result.loc[i, 'attempt_started'] = start
+                record = models.GlobalResults(run=self.simulation_number + 1)
+                record.attempt_no = counter
+                record.call_no = i
+                record.batch = self.batch
+                record.spin = spin
+                record.capacity = self.capacity
+                record.attempt_started = start
+                record.save()
             self.call_list = [i for i in self.call_list if i not in batch]
-            yield Globals.env.timeout(random.triangular(high=Globals.take_high, low=Globals.take_low,
-                                                        mode=Globals.take_mode))
-            unreached = random.sample(population=batch, k=round(random.triangular(high=Globals.unreachable_h,
-                                                                                  low=Globals.unreachable_l,
-                                                                                  mode=Globals.unreachable_m) *
+            yield self.env.timeout(random.triangular(high=self.take_high, low=self.take_low,
+                                                        mode=self.take_mode))
+            unreached = random.sample(population=batch, k=round(random.triangular(high=self.unreachable_h,
+                                                                                  low=self.unreachable_l,
+                                                                                  mode=self.unreachable_m) *
                                                                 len(batch)))
             for i in batch:
-                batch_result.loc[i, 'if_unreachable'] = 1 if i in unreached else None
+                update_rec = models.GlobalResults.objects.filter(run=self.simulation_number+1, call_no=i).last()
+                update_rec.if_unreachable = 1 if i in unreached else None
+                update_rec.save()
             batch = [i for i in batch if i not in unreached]
-            yield Globals.env.timeout(random.triangular(high=Globals.ring_time_h, low=Globals.ring_time_l,
-                                                        mode=Globals.ring_time_m))
-            talks = random.sample(population=batch, k=round(len(batch) * random.triangular(high=Globals.reach_rate_h,
-                                                                                           low=Globals.reach_rate_l,
-                                                                                           mode=Globals.reach_rate_m)))
+            yield self.env.timeout(random.triangular(high=self.ring_time_h, low=self.ring_time_l,
+                                                        mode=self.ring_time_m))
+            talks = random.sample(population=batch, k=round(len(batch) * random.triangular(high=self.reach_rate_h,
+                                                                                           low=self.reach_rate_l,
+                                                                                           mode=self.reach_rate_m)))
             for i in batch:
-                batch_result.loc[i, 'if_not_answering'] = 1 if i not in talks else None
+                update_rec_na = models.GlobalResults.objects.filter(run=self.simulation_number+1, call_no=i).last()
+                update_rec_na.if_not_answering = 1 if i not in talks else None
+                update_rec_na.save()
             self.call_list += [i for i in batch if i not in talks]
-            Globals.results = pd.concat([Globals.results, batch_result], ignore_index=True)
             for i in talks:
-                answer_time = Globals.env.now
+                answer_time = self.env.now
                 call = IncomingCall(i)
-                Globals.env.process(self.accepting_call(call, answer_time))
+                self.env.process(self.accepting_call(call, answer_time))
             self.batch += 1
+
 
     def accepting_call(self, call, answer_time):
         answer_time = answer_time
-        Globals.results.loc[(Globals.results['call_no'] == call.name) & (Globals.results['if_unreachable'] != 1)
-                            & (Globals.results['if_not_answering'] != 1) & (Globals.results['run'] ==
-                                                                            self.simulation_number + 1),
-                            'answer_time'] = answer_time
-        duration = random.triangular(low=Globals.d_l, high=Globals.d_h, mode=Globals.d_m)
-        Globals.results.loc[(Globals.results['call_no'] == call.name) & (Globals.results['answer_time'] >= 0)
-                            & (Globals.results['run'] == self.simulation_number + 1),
-                            'amd_time'] = duration
-        yield Globals.env.timeout(min(duration, call.patience))
+        update_rec_at = models.GlobalResults.objects.filter(call_no=call.name, run=self.simulation_number+1).last()
+        update_rec_at.answer_time = answer_time
+        duration = random.triangular(low=self.d_l, high=self.d_h, mode=self.d_m)
+        update_rec_at.amd_time = duration
+        yield self.env.timeout(min(duration, call.patience))
         call.patience = call.patience - duration if duration < call.patience else 0
         if call.patience == 0:
-            Globals.results.loc[(Globals.results['call_no'] == call.name) & (
-                    Globals.results['answer_time'] >= 0) & (Globals.results['run'] == self.simulation_number + 1),
-                                'if_dropped'] = 1
-            Globals.results.loc[(Globals.results['call_no'] == call.name) & (
-                    Globals.results['answer_time'] >= 0) & (Globals.results['run'] == self.simulation_number + 1),
-                                'wait_before_drop'] = Globals.env.now - answer_time
+           update_rec_at.if_dropped = 1
+           update_rec_at.wait_before_drop = self.env.now - answer_time
         else:
             with self.agent.request() as req:
-                yield req | Globals.env.timeout(call.patience)
+                yield req | self.env.timeout(call.patience)
                 if req.triggered:
-                    wait_time = Globals.env.now - answer_time
-                    Globals.results.loc[(Globals.results['call_no'] == call.name) & (
-                            Globals.results['answer_time'] >= 0) & (Globals.results['run']
-                                                                    == self.simulation_number + 1),
-                                        'wait_time'] = wait_time
-                    talk_time = random.uniform(Globals.t_l, Globals.t_h)
-                    Globals.results.loc[(Globals.results['call_no'] == call.name) & (
-                            Globals.results['answer_time'] >= 0) &
-                                        (Globals.results['run'] == self.simulation_number + 1), 'talk_time'] = talk_time
-                    yield Globals.env.timeout(talk_time)
-                    clerical_time = random.uniform(Globals.c_l, Globals.c_h)
-                    Globals.results.loc[(Globals.results['call_no'] == call.name) & (
-                            Globals.results['answer_time'] >= 0) &
-                                        (Globals.results[
-                                             'run'] == self.simulation_number + 1), 'clerical_time'] = clerical_time
-                    yield Globals.env.timeout(clerical_time)
+                    wait_time = self.env.now - answer_time
+                    update_rec_at.wait_time = wait_time
+                    talk_time = random.uniform(self.t_l, self.t_h)
+                    update_rec_at.talk_time = talk_time
+                    yield self.env.timeout(talk_time)
+                    clerical_time = random.uniform(self.c_l, self.c_h)
+                    update_rec_at.clerical_time = clerical_time
+                    yield self.env.timeout(clerical_time)
                 else:
-                    Globals.results.loc[(Globals.results['call_no'] == call.name) & (
-                            Globals.results['answer_time'] >= 0) & (Globals.results['run'] ==
-                                                                    self.simulation_number + 1), 'if_dropped'] = 1
-                    Globals.results.loc[(Globals.results['call_no'] == call.name) & (
-                            Globals.results['answer_time'] >= 0) & (Globals.results['run'] ==
-                                                                    self.simulation_number + 1), 'wait_before_drop'] = \
-                        Globals.env.now - answer_time
+                    update_rec_at.if_dropped = 1
+                    update_rec_at.wait_before_drop = self.env.now - answer_time
+        update_rec_at.save()
 
     def run(self):
-        Globals.env.process(self.dial())
-        Globals.env.run()
+        self.env.process(self.dial())
+        self.env.run()
 
 
 class IncomingCall:
     def __init__(self, name):
         self.name = name
-        self.patience = random.uniform(Globals.p_l, Globals.p_h)
+        self.patience = random.uniform(models.CreateInput.objects.values('p_h').last()['p_h'],
+                                       models.CreateInput.objects.values('p_l').last()['p_l'])
 
-
-# for simulation_number in range(Globals.number_of_simulations):
-#     print(f'run # {simulation_number}')
-#     Globals.env = simpy.Environment()
-#     call_center = CallCenter(simulation_number)
-#     call_center.run()
-# print('wruting results to the file...')
-# Globals.results.to_excel('simulation_log.xlsx', index=False, sheet_name='CDR log')
 
 class ConfirmVars(View):
     template = 'simulator/confirm_vars.html'
     def get(self,request):
         myvars = models.CreateInput.objects.values().last()
-
         return render(request, template_name=self.template, context={'myvars': myvars})
 
 class EditVars(UpdateView):
@@ -226,28 +189,42 @@ class EditVars(UpdateView):
         vars = form.save()
         return redirect(self.success_url)
 
+
 def launch(request):
-    print(Globals.__dict__)
-    for simulation_number in range(Globals.number_of_simulations):
+    start = datetime.now()
+    models.GlobalResults.objects.all().delete()
+    for simulation_number in range(models.CreateInput.objects.values('number_of_simulations').last()['number_of_simulations']):
         print(f'run {simulation_number}')
-        Globals.env = simpy.Environment()
+        CallCenter.env = simpy.Environment()
         call_center = CallCenter(simulation_number)
         call_center.run()
-    print('writing results to the file...')
-    Globals.results.to_excel('simulation_log.xlsx', index=False, sheet_name='CDR log')
-    print(Globals.__dict__)
-    return redirect('simulator:main')
+    finish = datetime.now()
+    print(f' simulation took {finish - start}')
+    return redirect('simulator:export')
+
+
+def export_csv(request):
+    response = HttpResponse(content_type='text/csv')
+    response['Content-Disposition'] = 'attachment; filename="simulation_log.csv"'
+
+    writer = csv.writer(response)
+    writer.writerow(['run', 'attempt_no', 'call_no', 'batch', 'spin', 'capacity', 'attempt_started', 'if_unreachable',
+                     'if_not_answering', 'answer_time', 'amd_time', 'if_dropped', 'wait_before_drop', 'wait_time',
+                     'talk_time', 'clerical_time'])
+
+    results = models.GlobalResults.objects.all().values_list('run', 'attempt_no', 'call_no', 'batch', 'spin', 'capacity',
+                                                           'attempt_started', 'if_unreachable',
+                                                           'if_not_answering', 'answer_time', 'amd_time', 'if_dropped',
+                                                           'wait_before_drop', 'wait_time', 'talk_time',
+                                                           'clerical_time')
+    for result in results:
+        writer.writerow(result)
+
+    return response
 
 
 #TODO
-# 3-1) change pd to BD
-# 3-2) clean bd after each simulation
 # 4) if script is being run something should be displayed while results are unavailable
-# 5)update class Globals params when edited - they not updating
 
-# Create a new record using the model's constructor.
-# record = MyModelName(my_field_name="Instance #1")
-# after all changes are made by changing attributes of var record
-# Save the object into the database.
-# record.save()
+
 
