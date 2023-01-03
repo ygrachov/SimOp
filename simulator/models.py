@@ -37,6 +37,7 @@ class GlobalResults(models.Model):
     attempt_no = models.IntegerField(null=True)
     call_no = models.IntegerField(null=True)
     batch = models.IntegerField(null=True)
+    queue = models.IntegerField(null=True)
     spin = models.FloatField(null=True)
     capacity = models.IntegerField(null=True)
     attempt_started = models.FloatField(null=True)
@@ -49,3 +50,6 @@ class GlobalResults(models.Model):
     wait_time = models.FloatField(null=True)
     talk_time = models.FloatField(null=True)
     clerical_time = models.FloatField(null=True)
+
+    class Meta:
+        indexes = [models.Index(fields=['run', 'call_no', 'batch']),]

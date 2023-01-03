@@ -78,6 +78,7 @@ class CallCenter:
         # clerical time parameters (high, low)
         self.c_h = models.CreateInput.objects.values('c_h').last()['c_h']
         self.c_l =models.CreateInput.objects.values('c_l').last()['c_l']
+        self.queue = 0
 
 
     def dial(self):
@@ -85,7 +86,10 @@ class CallCenter:
         while len(self.call_list) > 0 and self.env.now < self.shift_time:
             start = self.env.now
             spin = counter / len(self.call_list)
-            batch = [i for y, i in enumerate(self.call_list) if y + 1 <= self.line_numbers]
+            if self.queue:
+                batch = []
+            else:
+                batch = [i for y, i in enumerate(self.call_list) if y + 1 <= self.line_numbers]
             self.call_list = [i for i in self.call_list if i not in batch]
             for i in batch:
                 counter += 1
@@ -140,6 +144,8 @@ class CallCenter:
         else:
             with self.agent.request() as req:
                 yield req | self.env.timeout(call.patience)
+                self.queue = len(self.agent.queue)
+                update_rec_at.queue = self.queue
                 if req.triggered:
                     wait_time = self.env.now - answer_time
                     update_rec_at.wait_time = wait_time
@@ -208,11 +214,11 @@ def export_csv(request):
     response['Content-Disposition'] = 'attachment; filename="simulation_log.csv"'
 
     writer = csv.writer(response)
-    writer.writerow(['run', 'attempt_no', 'call_no', 'batch', 'spin', 'capacity', 'attempt_started', 'if_unreachable',
+    writer.writerow(['run', 'attempt_no', 'call_no', 'batch', 'queue', 'spin', 'capacity', 'attempt_started', 'if_unreachable',
                      'if_not_answering', 'answer_time', 'amd_time', 'if_dropped', 'wait_before_drop', 'wait_time',
                      'talk_time', 'clerical_time'])
 
-    results = models.GlobalResults.objects.all().values_list('run', 'attempt_no', 'call_no', 'batch', 'spin', 'capacity',
+    results = models.GlobalResults.objects.all().values_list('run', 'attempt_no', 'call_no', 'batch', 'queue', 'spin', 'capacity',
                                                            'attempt_started', 'if_unreachable',
                                                            'if_not_answering', 'answer_time', 'amd_time', 'if_dropped',
                                                            'wait_before_drop', 'wait_time', 'talk_time',
