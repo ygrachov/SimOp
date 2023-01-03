@@ -7,5 +7,6 @@ urlpatterns = [
     path('form/', GetVars.as_view(), name='form'),
     path('sucsess/', ConfirmVars.as_view(), name='success'),
     path('<int:pk>/update', EditVars.as_view(), name='update'),
-    path('/',launch, name='launch')
+    path('/',launch, name='launch'),
+    path('export/', export_csv, name='export')
 ]
