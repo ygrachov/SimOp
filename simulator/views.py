@@ -10,6 +10,8 @@ from datetime import datetime
 from django.http import HttpResponse
 import csv
 
+import yappi
+
 class InputForm(ModelForm):
     class Meta:
         model = models.CreateInput
@@ -132,7 +134,6 @@ class CallCenter:
                 self.env.process(self.accepting_call(call, answer_time))
             self.batch += 1
 
-
     def accepting_call(self, call, answer_time):
         answer_time = answer_time
         update_rec_at = models.GlobalResults.objects.filter(call_no=call.name, run=self.simulation_number+1).last()
@@ -164,8 +165,16 @@ class CallCenter:
         update_rec_at.save()
 
     def run(self):
+        yappi.set_clock_type("wall")
+        yappi.start()
         self.env.process(self.dial())
         self.env.run()
+        yappi.stop()
+
+        threads_stat = yappi.get_thread_stats()
+        for thread in threads_stat:
+            print(f'Function stats for ({thread.name}) ({thread.id})')
+            yappi.get_func_stats(ctx_id=thread.id).print_all()
 
 
 class IncomingCall:
