@@ -1,9 +1,105 @@
 {% extends 'simulator/base.html' %}
 {% load crispy_forms_tags %}
 {% block content %}
+<h3>PLEASE, ENTER DATA FOR YOUR SIMULATION MODEL BELLOW</h3><p>
 <form action="" method="post">
     {% csrf_token %}
-    {{ form|crispy }}
+    <h3>general settings:</h3></p>
+<div class = 'row'>
+    <div class = 'col-lg-2'>
+        {{ form.number_of_simulations|as_crispy_field }}
+        </div>
+    <div class = 'col-lg-2'>
+        {{ form.line_numbers|as_crispy_field }}
+        </div>
+    <div class = 'col-lg-2'>
+        {{ form.number_jf_agents|as_crispy_field }}
+        </div>
+     <div class = 'col-lg-2'>
+        {{ form.shift_time|as_crispy_field }}
+        </div>
+    <div class = 'col-lg-2'>
+        {{ form.call_list|as_crispy_field }}
+        </div>
+</div
+    <h3>batch formation:</h3></p>
+    <div class = 'row'>
+         <div class = 'col-lg-2'>
+        {{ form.take_high|as_crispy_field }}
+        </div>
+    <div class = 'col-lg-2'>
+        {{ form.take_low|as_crispy_field }}
+        </div>
+    <div class = 'col-lg-2'>
+        {{ form.take_mode|as_crispy_field }}
+        </div>
+    </div>
+    <h3>settings related to quality of database:</h3></p>
+        <div class = 'row'>
+     <div class = 'col-lg-2'>
+        {{ form.unreachable_h|as_crispy_field }}
+        </div>
+    <div class = 'col-lg-2'>
+        {{ form.unreachable_l|as_crispy_field }}
+        </div>
+         <div class = 'col-lg-2'>
+        {{ form.unreachable_m|as_crispy_field }}
+        </div>
+    </div>
+    <h3>customer reach settings:</h3></p>
+        <div class = 'row'>
+     <div class = 'col-lg-2'>
+        {{ form.ring_time_h|as_crispy_field }}
+        </div>
+    <div class = 'col-lg-2'>
+        {{ form.ring_time_l|as_crispy_field }}
+        </div>
+         <div class = 'col-lg-2'>
+        {{ form.ring_time_m|as_crispy_field }}
+        </div>
+            <div class = 'col-lg-2'>
+        {{ form.reach_rate_h|as_crispy_field }}
+        </div>
+            <div class = 'col-lg-2'>
+        {{ form.reach_rate_l|as_crispy_field }}
+        </div>
+            <div class = 'col-lg-2'>
+        {{ form.reach_rate_m|as_crispy_field }}
+        </div>
+    </div>
+    <h3>call processing settings:</h3></p>
+         <div class = 'row'>
+     <div class = 'col-lg-2'>
+        {{ form.d_h|as_crispy_field }}
+        </div>
+    <div class = 'col-lg-2'>
+        {{ form.d_l|as_crispy_field }}
+        </div>
+         <div class = 'col-lg-2'>
+        {{ form.d_m|as_crispy_field }}
+        </div>
+            <div class = 'col-lg-2'>
+        {{ form.p_h|as_crispy_field }}
+        </div>
+            <div class = 'col-lg-2'>
+        {{ form.p_l|as_crispy_field }}
+        </div>
+    </div>
+        <div class = 'row'>
+     <div class = 'col-lg-2'>
+        {{ form.t_h|as_crispy_field }}
+        </div>
+    <div class = 'col-lg-2'>
+        {{ form.t_l|as_crispy_field }}
+        </div>
+         <div class = 'col-lg-2'>
+        {{ form.c_h|as_crispy_field }}
+        </div>
+            <div class = 'col-lg-2'>
+        {{ form.c_l|as_crispy_field }}
+        </div>
+    </div></p>
+
     <input type="submit" value="submit and run simulation">
     <input type="button" value="back to main" onclick="window.location.href='{% url 'simulator:main' %}'">
 </form>

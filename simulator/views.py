@@ -8,16 +8,67 @@ import random
 from django.views.generic import UpdateView
 from datetime import datetime
 from django.http import HttpResponse
+from crispy_forms.helper import FormHelper
+from crispy_forms.layout import Layout, Field, ButtonHolder, Submit, Div
 import csv
 
+
+# class Row(Div):
+#     css_class = 'row g-3'
+
+
 class InputForm(ModelForm):
+    # def __init__(self, *args, **kwargs):
+    #     super().__init__(*args, **kwargs)
+    #     self.helper = FormHelper()
+    #     self.helper.layout = Layout(
+    #         Row(
+    #             Field('number_of_simulations', wrapper_class='form-group col-md-6 mb-0'),
+    #             Field('line_numbers', wrapper_class='form-group col-md-6 mb-0'),
+    #             Field('number_jf_agents', wrapper_class='form-group col-md-6 mb-0'),
+    #             Field('shift_time', wrapper_class='form-group col-md-6 mb-0'),
+    #             Field('call_list', wrapper_class='form-group col-md-6 mb-0'),
+    #         ),
+    #         Row(
+    #             Field('take_high', wrapper_class='form-group col-md-6 mb-0'),
+    #             Field('take_low', wrapper_class='form-group col-md-6 mb-0'),
+    #             Field('take_mode', wrapper_class='form-group col-md-6 mb-0'),
+    #             Field('unreachable_h', wrapper_class='form-group col-md-6 mb-0'),
+    #             Field('unreachable_l', wrapper_class='form-group col-md-6 mb-0'),
+    #         ),
+    #         Row(
+    #             Field('unreachable_m', wrapper_class='form-group col-md-6 mb-0'),
+    #             Field('ring_time_h', wrapper_class='form-group col-md-6 mb-0'),
+    #             Field('ring_time_l', wrapper_class='form-group col-md-6 mb-0'),
+    #             Field('ring_time_m', wrapper_class='form-group col-md-6 mb-0'),
+    #             Field('reach_rate_h', wrapper_class='form-group col-md-6 mb-0'),
+    #         ),
+    #         Row(
+    #             Field('reach_rate_l', wrapper_class='form-group col-md-6 mb-0'),
+    #             Field('reach_rate_m', wrapper_class='form-group col-md-6 mb-0'),
+    #             Field('d_h', wrapper_class='form-group col-md-6 mb-0'),
+    #             Field('d_l', wrapper_class='form-group col-md-6 mb-0'),
+    #             Field('d_m', wrapper_class='form-group col-md-6 mb-0'),
+    #         ),
+    #         Row(
+    #             Field('p_h', wrapper_class='form-group col-md-6 mb-0'),
+    #             Field('p_l', wrapper_class='form-group col-md-6 mb-0'),
+    #             Field('t_h', wrapper_class='form-group col-md-6 mb-0'),
+    #             Field('t_l', wrapper_class='form-group col-md-6 mb-0'),
+    #             Field('c_h', wrapper_class='form-group col-md-6 mb-0'),
+    #             Field('c_l', wrapper_class='form-group col-md-6 mb-0'),
+    #         ),
+    #         Submit('submit', 'Submit')
+    #     )
     class Meta:
         model = models.CreateInput
         fields = '__all__'
 
+
 def index(request):
     context = {'greetings': 'WELCOME TO MY CALL CENTER SIMULATION PAGE'}
     return render(request, 'simulator/index.html', context)
+
 
 class GetVars(View):
     model = models.CreateInput
@@ -209,7 +260,7 @@ def launch(request):
         call_center.run()
     finish = datetime.now()
     print(f' simulation took {finish - start}')
-    return redirect('simulator:export')
+    return redirect('simulator: export')
 
 
 def export_csv(request):
