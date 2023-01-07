@@ -1,12 +1,42 @@
 {% extends 'simulator/base.html' %}
 {% block content %}
+<div class="visible-class" style="display:none"><h1>THIS FUCKING COD IS RUNNING!!!!</h1></div>
+<div class="invisible-class">
 <h1>Your input: </h1>
 {% for key, value in myvars.items %}
+    {% if key != 'id' %}</p>
 {{key}} - {{value}}<p>
+    {% endif %}
     {% endfor %}
-<input type="button" value="Edit input" onclick="window.location.href='{% url 'simulator:update' myvars.id %}'">
-<form action='{% url "simulator:launch" %}' method="POST">
+    </div>
+
+<input class="invisible-class" type="button" value="Edit input" onclick="window.location.href='{% url 'simulator:update' myvars.id %}'"></p>
+<form id='form' action='{% url "simulator:launch" %}' method="POST">
 {% csrf_token %}
-  <input value="Confirm & Run" type="submit">
+  <input class="invisible-class" value="Confirm & Run" type="submit" id="sumbit-button">
 </form>
+
+<script>
+  function toggleVisibility() {
+    // Get the elements with the "invisible-class" and "visible-class" classes
+    var invisibleElements = document.querySelectorAll('.invisible-class');
+    var visibleElement = document.querySelector('.visible-class');
+
+    // Set the "display" property of the invisible elements to "none"
+    invisibleElements.forEach(function(element) {
+      element.style.display = 'none';
+    });
+    // Set the "display" property of the visible element to "block"
+    visibleElement.style.display = 'block';
+  }
+
+  // Add an event listener to the submit button
+  var button = document.getElementById('sumbit-button');
+  button.addEventListener('click', function() {
+    // Trigger the toggleVisibility function
+    toggleVisibility();
+  });
+</script>
+
+
 {% endblock %}
