@@ -1,6 +1,27 @@
 {% extends 'simulator/base.html' %}
+{% load static %}
 {% block content %}
-<h1>HELLO WORLD</h1>
-{{ greetings }}<p>
-<input type="button" value="enter my variables" onclick="window.location.href='{% url 'simulator:form' %}'">
+<div class="mt-5">
+<h1 class="text-center" style="color:0673a9">WELCOME TO THIS CALL CENTER SIMULATION APPLICATION!</h1>
+</div>
+<div class="mt-3 ml-5 pl-5 text-center">
+<h2>How it works? </h2></p>
+</div>
+<div class="row mt-4 ml-5">
+<div class="col" style="font-size:190%">
+    <ol>
+<li>Be ready with your simulation parameters</li>
+        <li>Press Enter variables</li>
+        <li>Check and confirm your input</li>
+        <li>Press Run</li>
+        <li>Wait till simulation_log.csv file appears downloaded</li>
+    </ol>
+</div>
+<div class="col-8 mr-0">
+    <img class="w-75 h-100 ml-5" src="{% static 'images/python_call_center.png' %}"
+         alt="call center simulation modelling with python">
+</div>
+</div></p>
+<input class="mt-3 mb-2 ml-5 btn btn-lg" style='background-color:0673a9; color:white' type="button" value="enter my variables"
+       onclick="window.location.href='{% url 'simulator:form' %}'">
 {% endblock %}
