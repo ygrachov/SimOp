@@ -94,12 +94,12 @@ class CallCenter:
             if self.queue:
                 grab = ((self.line_numbers * (1 - self.unreachable_m) * self.reach_rate_m) - self.queue) //\
                        ((1 - self.unreachable_m) * self.reach_rate_m)
-                # print(f'grab is {grab}')
+
                 batch = [i for y, i in enumerate(self.call_list) if y + 1 <= grab]
             else:
                 batch = [i for y, i in enumerate(self.call_list) if y + 1 <= self.line_numbers]
             self.call_list = [i for i in self.call_list if i not in batch]
-            # print(f'batch# {self.batch} took {len(batch)} at {start} & queue is {self.queue}')
+
             for i in batch:
                 counter += 1
                 record = models.GlobalResults(run=self.simulation_number + 1)
@@ -118,7 +118,6 @@ class CallCenter:
                                                                                   mode=self.unreachable_m) *
                                                                 len(batch)))
             for i in batch:
-                print('batch')
                 update_rec = models.GlobalResults.objects.filter(run=self.simulation_number+1, call_no=i).last()
                 update_rec.if_unreachable = 1 if i in unreached else None
                 update_rec.save()
@@ -138,6 +137,7 @@ class CallCenter:
                 call = IncomingCall(i)
                 self.env.process(self.accepting_call(call, answer_time))
             self.batch += 1
+            print(f'batch# {self.batch} took {len(batch)} at {start} & queue is {self.queue} and call_list is {len(self.call_list)}')
 
 
     def accepting_call(self, call, answer_time):
@@ -196,13 +196,12 @@ class EditVars(UpdateView):
         vars = get_object_or_404(models.CreateInput, id=pk)
         form = InputForm(instance=vars)
         cntx = {'form': form}
-        print(vars)
         return render(request, template_name=self.template_name, context=cntx)
 
     def post(self, request, pk=None):
         vars = get_object_or_404(models.CreateInput, id=pk)
         form = InputForm(request.POST, instance=vars)
-        vars = form.save()
+        form.save()
         return redirect(self.success_url)
 
 

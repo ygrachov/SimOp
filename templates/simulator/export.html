@@ -1,7 +1,11 @@
 {% extends 'simulator/base.html' %}
+{% load static %}
 {% block content %}
-<h1>Your results: </h1>
-
-<input type="button" value="download" onclick="window.location.href='{% url 'simulator:csv' %}'">
-
+<div style="margin-top:18%">
+<h1 class="text-center font-weight-bold" style="color:0673a9">YOUR RESULTS: </h1>
+<div class="text-center" style="color:0673a9; margin-top:3%">YOU CAN DOWNLOAD THE COMPREHENSIVE LOG BY CLICKING THE BUTTON BELOW
+</div>
+</div>
+<input class="mt-5 btn btn-lg" style='background-color:0673a9; color:white; display:flex; margin:auto' type="button"
+       value="download" onclick="window.location.href='{% url 'simulator:csv' %}'">
 {% endblock %}
