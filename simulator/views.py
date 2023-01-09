@@ -5,10 +5,10 @@ from django.urls import reverse, reverse_lazy
 import simpy
 from . import models
 import random
-from django.views.generic import UpdateView
+
+from django.views.generic import UpdateView, TemplateView
 from datetime import datetime
-from django.http import HttpResponse
-from django.db.models import F
+from django.http import HttpResponse, HttpResponseRedirect
 import csv
 
 
@@ -217,6 +217,9 @@ def launch(request):
     finish = datetime.now()
     print(f' simulation took {finish - start}')
     return redirect('simulator:export')
+
+class Results(TemplateView):
+    template_name = 'simulator/export.html'
 
 
 def export_csv(request):

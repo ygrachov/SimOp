@@ -8,5 +8,6 @@ urlpatterns = [
     path('sucsess/', ConfirmVars.as_view(), name='success'),
     path('<int:pk>/update', EditVars.as_view(), name='update'),
     path('launch', launch, name='launch'),
-    path('export/', export_csv, name='export')
+    path('export/', Results.as_view(), name='export'),
+    path('download_csv', export_csv, name='csv')
 ]
