@@ -4,19 +4,26 @@
     <h1>THIS FUCKING COD IS RUNNING!!!!</h1>
     <div class="spinner-border text-primary"></div>
 </div>
-<div class="invisible-class">
-<h1>Your input: </h1>
+<div class="invisible-class ml-5">
+<h1 class="mt-5 text-center" style="color:0673a9">Your input: </h1>
+    <div class="row mt-5" style="font-size:160%">
 {% for key, value in myvars.items %}
-    {% if key != 'id' %}</p>
-{{key}} - {{value}}<p>
+    {% if key != 'id' %}
+<div class="col-3">
+{{key}} - {{value}}
+</div>
     {% endif %}
     {% endfor %}
     </div>
+    </div>
 
-<input class="invisible-class" type="button" value="Edit input" onclick="window.location.href='{% url 'simulator:update' myvars.id %}'"></p>
+<input class="invisible-class mt-4 ml-5  btn btn-lg" style='background-color:0673a9; color:white' type="button"
+       value="Edit input" onclick="window.location.href=
+'{% url 'simulator:update' myvars.id %}'"></p>
 <form id='form' action='{% url "simulator:launch" %}' method="POST">
 {% csrf_token %}
-  <input class="invisible-class" value="Confirm & Run" type="submit" id="sumbit-button">
+  <input class="invisible-class mt-2 ml-5 btn btn-lg" style='background-color:0673a9; color:white' value="Confirm & Run"
+         type="submit" id="sumbit-button">
 </form>
 
 <script>
