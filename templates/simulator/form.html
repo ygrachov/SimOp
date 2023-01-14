@@ -2,10 +2,27 @@
 {% load static %}
 {% load crispy_forms_tags %}
 {% block content %}
+<div class="visible-class" style="display:none; text-align:center; margin-top:18%">
+    <h1 class="text-center font-weight-bold" style="color:0673a9">YOUR SIMULATION MODEL IS RUNNING!!!!</h1></p>
+    <div class="spinner-border text-primary"></div></p>
+    <span  class="text-center" style="color:0673a9">THE SIMULATION MIGHT TAKE A COUPLE OF MINUTES. DO NOT REFRESH
+        THIS PAGE !</span>
+</div>
+<div class="invisible-class ml-5">
 <div class="mt-3 ml-5">
  <h3 class="text-center" style="color:0673a9">YOUR INPUTS TO SIMULATION MODEL:</h3></div><p>
-<form action="" method="post">
+<form action="" method="post" id="myform">
     {% csrf_token %}
+    {% if form.errors %}
+        <div id="error-summary" class="alert alert-danger">
+            <h2>Error Summary</h2>
+            <ul>
+                {% for error in form.errors %}
+                <li>{{ error }}</li>
+                {% endfor %}
+            </ul>
+        </div>
+    {% endif %}
     <div class='mt-4 ml-4' style="color:#2319A2">
         <img style="width:2%" src="{% static 'icons/settings.png' %}"
          alt="general simulation inputs">
@@ -18,7 +35,7 @@
         {{ form.line_numbers|as_crispy_field }}
         </div>
     <div class = 'col-lg-2'>
-        {{ form.number_jf_agents|as_crispy_field }}
+        {{ form.number_of_agents|as_crispy_field }}
         </div>
      <div class = 'col-lg-2'>
         {{ form.shift_time|as_crispy_field }}
@@ -118,8 +135,34 @@
     </div></p>
 
     <input class="mt-3 mb-2 ml-5 btn btn-lg" style='background-color:0673a9; color:white' type="submit"
-           value="Check & Confirm Input">
+           value="Run Simulation" id="sumbit-button">
     <input class="mt-3 mb-2 ml-5 btn btn-lg" style='background-color:0673a9; color:white' type="button"
-           value="Back To Main" onclick="window.location.href='{% url 'simulator:main' %}'">
+           value="Back To Main" onclick='window.location.href="{% url "simulator:main" %}"'>
 </form>
+</div>
+
+<script>
+  function toggleVisibility() {
+    // Get the elements with the "invisible-class" and "visible-class" classes
+    var invisibleElements = document.querySelectorAll('.invisible-class');
+    var visibleElement = document.querySelector('.visible-class');
+
+    // Set the "display" property of the invisible elements to "none"
+    invisibleElements.forEach(function(element) {
+      element.style.display = 'none';
+    });
+    // Set the "display" property of the visible element to "block"
+    visibleElement.style.display = 'block';
+  }
+
+
+
+  // Add an event listener to the submit button
+  var button = document.getElementById('sumbit-button');
+  button.addEventListener('click', function() {
+    // Trigger the toggleVisibility function
+    toggleVisibility();
+  });
+</script>
+
 {% endblock %}

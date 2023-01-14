@@ -5,21 +5,115 @@ from django.urls import reverse, reverse_lazy
 import simpy
 from . import models
 import random
-
-from django.views.generic import UpdateView, TemplateView
+from django.db.models import Avg, Max, Sum, Count
+from django.views.generic import UpdateView, TemplateView, FormView
 from datetime import datetime
 from django.http import HttpResponse, HttpResponseRedirect
+import uuid
 import csv
 
 
-# class Row(Div):
-#     css_class = 'row g-3'
+class Uuid:
+    def __init__(self):
+        self.id = uuid.uuid4().hex
 
+
+num = Uuid()
 
 class InputForm(ModelForm):
     class Meta:
         model = models.CreateInput
-        fields = '__all__'
+        fields = ['number_of_simulations',
+                  'line_numbers',
+                  'number_of_agents',
+                  'shift_time',
+                  'call_list',
+                  'take_high',
+                  'take_low',
+                  'take_mode',
+                  'unreachable_h',
+                  'unreachable_l',
+                  'unreachable_m',
+                  'ring_time_h',
+                  'ring_time_l',
+                  'ring_time_m',
+                  'reach_rate_h',
+                  'reach_rate_l',
+                  'reach_rate_m',
+                  'd_h',
+                  'd_l',
+                  'd_m',
+                  'p_h',
+                  'p_l',
+                  't_h',
+                  't_l',
+                  'c_h',
+                  'c_l']
+
+    def clean(self):
+        cleaned_data = super().clean()
+        shift_time = cleaned_data.get('shift_time')
+        take_high = cleaned_data.get('take_high')
+        take_low = cleaned_data.get('take_low')
+        take_mode = cleaned_data.get('take_mode')
+        unreachable_h = cleaned_data.get('unreachable_h')
+        unreachable_l = cleaned_data.get('unreachable_l')
+        unreachable_m = cleaned_data.get('unreachable_m')
+        ring_time_h = cleaned_data.get('ring_time_h')
+        ring_time_l = cleaned_data.get('ring_time_l')
+        ring_time_m = cleaned_data.get('ring_time_m')
+        reach_rate_h = cleaned_data.get('reach_rate_h')
+        reach_rate_l = cleaned_data.get('reach_rate_l')
+        reach_rate_m = cleaned_data.get('reach_rate_m')
+        d_h = cleaned_data.get('d_h')
+        d_l = cleaned_data.get('d_l')
+        d_m = cleaned_data.get('d_m')
+        p_h = cleaned_data.get('p_h')
+        p_l = cleaned_data.get('p_l')
+        t_h = cleaned_data.get('t_h')
+        t_l = cleaned_data.get('t_l')
+        c_h = cleaned_data.get('c_h')
+        c_l = cleaned_data.get('c_l')
+
+        if shift_time <= 0:
+            self.add_error('shift_time', 'number_of_simulations must be > 0')
+        if take_high < take_low:
+            self.add_error('take_high', 'lower bound must be <= upper bound')
+        if take_mode < take_low:
+            self.add_error('take_low', 'lower bound must be <= upper bound')
+        if take_mode > take_high:
+            self.add_error('take_mode', 'lower bound must be <= upper bound')
+        if unreachable_h < unreachable_l:
+            self.add_error('unreachable_h', 'lower bound must be <= upper bound')
+        if unreachable_m < unreachable_l:
+            self.add_error('unreachable_l', 'lower bound must be <= upper bound')
+        if unreachable_m > unreachable_h:
+            self.add_error('unreachable_m', 'lower bound must be <= upper bound')
+        if ring_time_h < ring_time_l:
+            self.add_error('ring_time_h', 'lower bound must be <= upper bound')
+        if ring_time_m < ring_time_l:
+            self.add_error('ring_time_l', 'lower bound must be <= upper bound')
+        if ring_time_m > ring_time_h:
+            self.add_error('ring_time_m', 'lower bound must be <= upper bound')
+        if reach_rate_h < reach_rate_l:
+            self.add_error('reach_rate_h', 'lower bound must be <= upper bound')
+        if reach_rate_m < reach_rate_l:
+            self.add_error('reach_rate_l', 'lower bound must be <= upper bound')
+        if reach_rate_m > reach_rate_h:
+            self.add_error('reach_rate_m', 'lower bound must be <= upper bound')
+        if d_h < d_l:
+            self.add_error('d_h', 'lower bound must be <= upper bound')
+        if d_m < d_l:
+            self.add_error('d_l', 'lower bound must be <= upper bound')
+        if d_m > d_h:
+            self.add_error('d_m', 'lower bound must be <= upper bound')
+        if t_h < t_l:
+            self.add_error('t_h', 'lower bound must be <= upper bound')
+        if p_h < p_l:
+            self.add_error('p_h', 'lower bound must be <= upper bound')
+        if c_h < c_l:
+            self.add_error('c_h', 'lower bound must be <= upper bound')
+        return cleaned_data
 
 
 def index(request):
@@ -27,25 +121,28 @@ def index(request):
     return render(request, 'simulator/index.html', context)
 
 
-class GetVars(View):
-    model = models.CreateInput
+class GetVars(FormView):
+    form_class = InputForm
     template_name = 'simulator/form.html'
-    success_url = reverse_lazy('simulator:success')
+    success_url = reverse_lazy('simulator:launch')
 
-    def get(self, request):
-        models.CreateInput.objects.all().delete()
-        context = {'form': InputForm()}
-        return render(request, template_name=self.template_name, context=context)
-
-    def post(self, request):
-        form = InputForm(request.POST)
-        form.save()
-        return redirect(self.success_url)
+    def form_valid(self, form):
+        if form.is_valid():
+            instance = form.save(commit=False)
+            uuid = num.id
+            instance.uuid = uuid
+            instance.save()
+            response = redirect(self.get_success_url())
+            response['cache-control'] = 'no-cache'
+            return response
+        else:
+            return super().form_invalid(form)
 
 
 class CallCenter:
     """represents call center """
-    def __init__(self, simulation_number):
+    def __init__(self, simulation_number, uuid):
+        self.uuid = uuid
         self.name = 0
         self.simulation_number = simulation_number
         self.call_list = models.CreateInput.objects.values('call_list').last()['call_list']
@@ -54,10 +151,10 @@ class CallCenter:
         self.env = simpy.Environment()
         self.line_numbers = models.CreateInput.objects.values('line_numbers').last()['line_numbers']
         # total shift
-        self.capacity = models.CreateInput.objects.values('number_jf_agents').last()['number_jf_agents']
+        self.capacity = models.CreateInput.objects.values('number_of_agents').last()['number_of_agents']
         self.agent = simpy.Resource(self.env, capacity=self.capacity)
         # time being simulated in sec: number or None
-        self.shift_time = models.CreateInput.objects.values('shift_time').last()['shift_time']
+        self.shift_time = models.CreateInput.objects.values('shift_time').last()['shift_time'] * 3600
         # time required to take and dial a batch(high, low, mode)
         self.take_high = models.CreateInput.objects.values('take_high').last()['take_high']
         self.take_low = models.CreateInput.objects.values('take_low').last()['take_low']
@@ -85,8 +182,13 @@ class CallCenter:
         self.c_h = models.CreateInput.objects.values('c_h').last()['c_h']
         self.c_l =models.CreateInput.objects.values('c_l').last()['c_l']
         self.queue = 0
+        self.start = 0
+        self.finish = 0
 
     def dial(self):
+        record1 = models.GlobalResults(shift_started=self.env.now)
+        record1.uuid = self.uuid
+        record1.save()
         counter = 0
         while len(self.call_list) > 0 and self.env.now < self.shift_time:
             start = self.env.now
@@ -103,6 +205,8 @@ class CallCenter:
             for i in batch:
                 counter += 1
                 record = models.GlobalResults(run=self.simulation_number + 1)
+                record.uuid = self.uuid
+                record.queue = self.queue
                 record.attempt_no = counter
                 record.call_no = i
                 record.batch = self.batch
@@ -138,6 +242,9 @@ class CallCenter:
                 self.env.process(self.accepting_call(call, answer_time))
             self.batch += 1
             print(f'batch# {self.batch} took {len(batch)} at {start} & queue is {self.queue} and call_list is {len(self.call_list)}')
+        final_record = models.GlobalResults(shift_finished =self.env.now)
+        final_record.uuid = self.uuid
+        final_record.save()
 
 
     def accepting_call(self, call, answer_time):
@@ -149,13 +256,13 @@ class CallCenter:
         yield self.env.timeout(min(duration, call.patience))
         call.patience = call.patience - duration if duration < call.patience else 0
         if call.patience == 0:
-           update_rec_at.if_dropped = 1
-           update_rec_at.wait_before_drop = self.env.now - answer_time
+            update_rec_at.if_dropped = 1
+            update_rec_at.wait_before_drop = self.env.now - answer_time
+            self.call_list += [call.name]
         else:
             with self.agent.request() as req:
                 yield req | self.env.timeout(call.patience)
                 self.queue = len(self.agent.queue)
-                update_rec_at.queue = self.queue
                 if req.triggered:
                     wait_time = self.env.now - answer_time
                     update_rec_at.wait_time = wait_time
@@ -168,6 +275,7 @@ class CallCenter:
                 else:
                     update_rec_at.if_dropped = 1
                     update_rec_at.wait_before_drop = self.env.now - answer_time
+                    self.call_list += [call.name]
         update_rec_at.save()
 
     def run(self):
@@ -182,67 +290,52 @@ class IncomingCall:
                                        models.CreateInput.objects.values('p_l').last()['p_l'])
 
 
-class ConfirmVars(View):
-    template = 'simulator/confirm_vars.html'
-    def get(self,request):
-        myvars = models.CreateInput.objects.values().last()
-        return render(request, template_name=self.template, context={'myvars': myvars})
-
-class EditVars(UpdateView):
-    template_name = 'simulator/createinput_update.html'
-    success_url = reverse_lazy('simulator:success')
-    def get(self, request, pk):
-        pk = models.CreateInput.objects.values().last()['id']
-        vars = get_object_or_404(models.CreateInput, id=pk)
-        form = InputForm(instance=vars)
-        cntx = {'form': form}
-        return render(request, template_name=self.template_name, context=cntx)
-
-    def post(self, request, pk=None):
-        vars = get_object_or_404(models.CreateInput, id=pk)
-        form = InputForm(request.POST, instance=vars)
-        form.save()
-        return redirect(self.success_url)
-
-
 def launch(request):
+
     start = datetime.now()
-    models.GlobalResults.objects.all().delete()
     for simulation_number in range(models.CreateInput.objects.values('number_of_simulations').last()['number_of_simulations']):
         print(f'run {simulation_number}')
         CallCenter.env = simpy.Environment()
-        call_center = CallCenter(simulation_number)
+        call_center = CallCenter(simulation_number, num.id)
         call_center.run()
     finish = datetime.now()
     print(f' simulation took {finish - start}')
     return redirect('simulator:export')
 
-class Results(TemplateView):
+
+
+
+def display_results(request):
     template_name = 'simulator/export.html'
+    myvars = models.CreateInput.objects.filter(uuid=num.id).values().last()
+    fields = InputForm()
+    return render(request,  template_name=template_name, context={'myvars': myvars, 'form': fields})
 
 
 def export_csv(request):
+
     response = HttpResponse(content_type='text/csv')
     response['Content-Disposition'] = 'attachment; filename="simulation_log.csv"'
 
     writer = csv.writer(response)
-    writer.writerow(['run', 'attempt_no', 'call_no', 'batch', 'queue', 'spin', 'capacity', 'attempt_started', 'if_unreachable',
+    writer.writerow(['shift_started', 'shift_finished','run', 'attempt_no', 'call_no', 'batch', 'queue', 'spin', 'capacity', 'attempt_started', 'if_unreachable',
                      'if_not_answering', 'answer_time', 'amd_time', 'if_dropped', 'wait_before_drop', 'wait_time',
                      'talk_time', 'clerical_time'])
 
-    results = models.GlobalResults.objects.all().values_list('run', 'attempt_no', 'call_no', 'batch', 'queue', 'spin', 'capacity',
+    results = models.GlobalResults.objects.filter(uuid=num.id).values_list('shift_started', 'shift_finished', 'run', 'attempt_no', 'call_no', 'batch', 'queue', 'spin', 'capacity',
                                                            'attempt_started', 'if_unreachable',
                                                            'if_not_answering', 'answer_time', 'amd_time', 'if_dropped',
                                                            'wait_before_drop', 'wait_time', 'talk_time',
                                                            'clerical_time')
+
     for result in results:
         writer.writerow(result)
 
+    models.GlobalResults.objects.filter(uuid=num.id).delete()
+    models.CreateInput.objects.filter(uuid=num.id).delete()
+
     return response
 
-
-#TODO
-# 2) add styles
 
 
 

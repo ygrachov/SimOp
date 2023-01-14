@@ -5,23 +5,37 @@
 <h1 class="text-center" style="color:0673a9">WELCOME TO THIS CALL CENTER SIMULATION APPLICATION!</h1>
 </div>
 <div class="mt-3 ml-5 pl-5 text-center">
-<h2>How it works? </h2></p>
+<h2>How does it work? </h2></p>
 </div>
 <div class="row mt-4 ml-5">
 <div class="col xsm" style="font-size:180%">
     <ol>
-<li>Be ready with your simulation parameters</li>
-        <li>Press Enter variables</li>
+<li>Please have all simulation parameters ready or use the default ones before proceeding</li>
+        <li>Press "Enter" to input your variables</li>
         <li>Check and confirm your input</li>
-        <li>Press Run</li>
-        <li>Wait till simulation_log.csv file appears downloaded</li>
+        <li>Press "Run simulation" to start the simulation</li>
+        <li>Please wait until the simulation is completed and then download the results</li>
     </ol>
+    <input class="mt-2 ml-1 btn btn-lg" style='background-color:0673a9; color:white' type="button" value="Enter"
+       onclick="window.location.href='{% url 'simulator:form' %}'">
 </div>
 <div class="col xsm mr-0">
     <img class="w-75 mh-100 ml-5" src="{% static 'images/python_call_center.png' %}"
          alt="call center simulation modelling with python">
 </div>
 </div></p>
-<input class="mt-3 mb-2 ml-5 btn btn-lg" style='background-color:0673a9; color:white' type="button" value="enter my variables"
-       onclick="window.location.href='{% url 'simulator:form' %}'">
+<div>
+
+</div>
+<div class="mt-5 ml-5 pl-5 text-center">
+<h2>About </h2></p>
+</div>
+<div class='ml-5 mr-5 pl-3 pr-5 text-justify' style="margin-top:1%; font-size:180%">
+<p>This project is an open-source call center simulation application primarily designed as a desktop app. It allows users
+    to input various parameters and simulate a call center environment to test and analyze different scenarios.
+    However, due to current server limitations, some inputs may be restricted. We welcome any contributions or feedback
+    on the project. If you are interested in contributing or providing feedback, please contact
+    <a href="mailto:yg2486@columbia.edu">yg2486@columbia.edu </a></p>
+<p>Please note that this is a simulation application and the results should be used for reference purpose only</p></div>
+
 {% endblock %}

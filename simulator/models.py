@@ -1,38 +1,74 @@
 from django.db import models
+from django.core.validators import MaxValueValidator, MinValueValidator
 
-# Create your models here.
+
 class CreateInput(models.Model):
-    number_of_simulations = models.IntegerField(help_text="How many times the whole process is reproduced")
-    line_numbers = models.IntegerField(help_text="How many lines assigned to your call center")
-    number_jf_agents = models.IntegerField(help_text="How many people are serving calls")
-    shift_time = models.FloatField(help_text="How long the shift lasts in hours, decimal")
-    call_list = models.IntegerField(help_text="How many calls have to be served")
-    take_high = models.FloatField(help_text="max. time to load the dialer in sec, decimal")
-    take_low = models.FloatField(help_text="min.time to load the dialer in sec, decimal")
-    take_mode = models.FloatField(help_text="avg time to load the dialer in sec, decimal")
-    unreachable_h = models.FloatField(help_text="max. share of unsuccessful attempts in butch, decimal")
-    unreachable_l = models.FloatField(help_text="min. share of unsuccessful attempts in butch, decimal")
-    unreachable_m = models.FloatField(help_text="avg. share of unsuccessful attempts in butch, decimal")
-    ring_time_h = models.FloatField(help_text="max.ringing time in sec, decimal")
-    ring_time_l = models.FloatField(help_text="min.ringing time in sec, decimal")
-    ring_time_m = models.FloatField(help_text="avg.ringing time in sec, decimal")
-    reach_rate_h = models.FloatField(help_text="max.share of answered customers from those who received "
-                                                "a call, decimal")
-    reach_rate_l = models.FloatField(help_text="min.share of answered customers from those who received "
-                                                "a call, decimal")
-    reach_rate_m = models.FloatField(help_text="avg.share of answered customers from those who received "
-                                                "a call, decimal")
-    d_h = models.FloatField(help_text="max.time answering machine detection takes in sec, decimal")
-    d_l = models.FloatField(help_text="min.time answering machine detection takes in sec, decimal")
-    d_m = models.FloatField(help_text="avg.time answering machine detection takes in sec, decimal")
-    p_h = models.FloatField(help_text="max.time customer is willing to wait for agent after answering in sec, decimal")
-    p_l = models.FloatField(help_text="min.time customer is willing to wait for agent after answering in sec, decimal")
-    t_h = models.FloatField(help_text="max.talk time between agent and customer in sec, decimal")
-    t_l = models.FloatField(help_text="min.talk time between agent and customer in sec, decimal")
-    c_h = models.FloatField(help_text="max.time to put conversation results in the system in sec, decimal")
-    c_l = models.FloatField(help_text="min.time to put conversation results in the system in sec, decimal")
+    number_of_simulations = models.IntegerField(default=1, validators=[MaxValueValidator(10),
+                                                MinValueValidator(1)],
+                                                help_text="how many times the entire process is repeated")
+    line_numbers = models.IntegerField(default=100, validators=[MinValueValidator(1)],
+                                       help_text="number of lines assigned to your call center")
+    number_of_agents = models.IntegerField(default=20, validators=[MinValueValidator(1)],
+                                           help_text="number of people handling calls")
+    shift_time = models.FloatField(default=8, validators=[MaxValueValidator(12)],
+                                   help_text="duration of the shift, measured in hours")
+    call_list = models.IntegerField(default=10000, validators=[MinValueValidator(1), MaxValueValidator(40000)],
+                                    help_text="number of clients that need to be contacted")
+    take_high = models.FloatField(default=4, validators=[MinValueValidator(0.0)],
+                                  help_text="maximum time it takes to load the dialer, measured in seconds")
+    take_low = models.FloatField(default=2, validators=[MinValueValidator(0.0)],
+                                 help_text="minimum time it takes to load the dialer, measured in seconds")
+    take_mode = models.FloatField(default=3, validators=[MinValueValidator(0.0)],
+                                  help_text="average time it takes to load the dialer, measured in seconds")
+    unreachable_h = models.FloatField(default=0.3, validators=[MinValueValidator(0.0), MaxValueValidator(1.0)],
+                                      help_text="maximum percentage of unsuccessful attempts in a batch")
+    unreachable_l = models.FloatField(default=0.1, validators=[MinValueValidator(0.0), MaxValueValidator(1.0)],
+                                      help_text="minimum percentage of unsuccessful attempts in a batch")
+    unreachable_m = models.FloatField(default=0.2, validators=[MinValueValidator(0.0), MaxValueValidator(1.0)],
+                                      help_text="average percentage of unsuccessful attempts in a batch")
+    ring_time_h = models.FloatField(default=45, validators=[MinValueValidator(1.0)],
+                                    help_text="maximum longest duration, in seconds, that a call will ring before"
+                                              " being considered as unanswered")
+    ring_time_l = models.FloatField(default=5, validators=[MinValueValidator(1.0)],
+                                    help_text="shortest duration, in seconds, that a call will ring before being "
+                                              "considered as unanswered")
+    ring_time_m = models.FloatField(default=15, validators=[MinValueValidator(1.0)],
+                                    help_text="average duration, in seconds, that a call will ring before being "
+                                              "considered as unanswered")
+    reach_rate_h = models.FloatField(default=0.5, validators=[MinValueValidator(0.0), MaxValueValidator(1.0)],
+                                     help_text="highest percentage of customers who answered the call out of those who "
+                                               "received it")
+    reach_rate_l = models.FloatField(default=0.01, validators=[MinValueValidator(0.0), MaxValueValidator(1.0)],
+                                     help_text="lowest percentage of customers who answered the call out of those who "
+                                               "received it")
+    reach_rate_m = models.FloatField(default=0.3, validators=[MinValueValidator(0.0), MaxValueValidator(1.0)],
+                                     help_text="average percentage of customers who answered the call out of those who "
+                                               "received it")
+    d_h = models.FloatField(default=10, validators=[MinValueValidator(0.0)],
+                            help_text="longest duration, in seconds, that the system takes to detect answering machine")
+    d_l = models.FloatField(default=1, validators=[MinValueValidator(0.0)],
+                            help_text="shortest duration, in seconds, that the system takes to detect answering machine")
+    d_m = models.FloatField(default=4, validators=[MinValueValidator(0.0)],
+                            help_text="average duration, in seconds, that the system takes to detect answering machine")
+    p_h = models.FloatField(default=15, validators=[MinValueValidator(0.0)], help_text="longest duration, in seconds,"
+                            " that a customer is willing to wait for an agent after answering the call")
+    p_l = models.FloatField(default=6, validators=[MinValueValidator(0.0)], help_text="shortest duration, in seconds,"
+                            " that a customer is willing to wait for an agent after answering the call")
+    t_h = models.FloatField(default=90, validators=[MinValueValidator(0.0)], help_text="longest duration, in seconds, "
+                            "of a conversation between a client and an agent")
+    t_l = models.FloatField(default=2, validators=[MinValueValidator(0.0)], help_text="shortest duration, in seconds, "
+                            "of a conversation between a client and an agent")
+    c_h = models.FloatField(default=10, validators=[MinValueValidator(0.0)], help_text=" maximum amount of time, "
+                            "in seconds, required to enter the results of a conversation into the system")
+    c_l = models.FloatField(default=4, validators=[MinValueValidator(0.0)], help_text="minimum amount of time, "
+                            "in seconds, required to enter the results of a conversation into the system")
+    uuid = models.CharField(null=True, max_length=100)
+
+
 
 class GlobalResults(models.Model):
+    shift_started = models.CharField(null=True, max_length=10)
+    uuid = models.CharField(null=True, max_length=10)
     run = models.IntegerField(null=True)
     attempt_no = models.IntegerField(null=True)
     call_no = models.IntegerField(null=True)
@@ -50,6 +86,7 @@ class GlobalResults(models.Model):
     wait_time = models.FloatField(null=True)
     talk_time = models.FloatField(null=True)
     clerical_time = models.FloatField(null=True)
+    shift_finished = models.CharField(null=True, max_length=100)
 
     class Meta:
         indexes = [models.Index(fields=['run', 'call_no', 'batch']),]
