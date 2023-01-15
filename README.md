@@ -2,20 +2,26 @@
 ### <li> Database: SQLLite
 ### <li> Frontend: HTML-5, Bootstrap-4, JavaScript
 
+### GENERAL
+This application is built on top of the SimPy library and simulates outbound operations during a call center 
+shift.</p> The model takes input from a web form, records it in a database, and passes it to the init of the class 
+CallCenter. The methods in this class are responsible for performing the simulation. Detailed documentation of the 
+specific classes and functions can be found in the docstrings.<p> Once the simulation is completed, the user is redirected
+to a results page where they can view their input and a link to download a CSV-formatted log file.</p> After downloading the
+log file, the user's input and simulation results are automatically deleted from the database.
+
 
 ### manage.py:
 The manage.py file is a command-line utility that allows you to interact with this application, primarily during the development process
 
 ### models.py:
 models.py defines two models</p>
-<li>a Django model called CreateInput. The model has several fields, each representing a different aspect of a call center simulation.
+<li>a Django model called CreateInput. The model includes several fields that represent various aspects of a call center simulation and are expected to be input by the user
 <li>class GlobalResults is a Django model that represents the results of a call center simulation. The class has several fields that store different aspects of the simulation results
 
 ### views.py:
 <li>The InputForm is a ModelForm used to create a form for the CreateInput model. 
-<li>The index function returns an empty context dictionary and renders the 'simulator/index.html' template. 
-<li>The GetVars view class handles HTTP GET and POST requests for the form page. It uses the InputForm to render the form template and saves the form data to the CreateInput model when a POST request is received. 
-<li>The EditVars and ConfirmVars views are used to edit user inputs. 
+<li>The index function returns a context dictionary and renders the 'simulator/index.html' template which is the main page
 <li>The CallCenter class represents a call center and is used to simulate a call center environment. It has several attributes and methods for managing the call center and its operations. 
 <li>The IncomingCall class represents an instance of a call used in the simulation. 
 <li>The launch function starts the simulation. 
