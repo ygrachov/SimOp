@@ -20,12 +20,12 @@
 <div class="text-center" style="color:0673a9; margin-top:1.5%">YOU CAN DOWNLOAD THE COMPREHENSIVE LOG BY CLICKING THE BUTTON BELOW
 </div>
 </div>
-<div class='mt-5' style="background-image: url({% static 'images/pic1.png' %}); background-repeat: no-repeat; background-position:
-center center; background-size: 6% 110%; text-align: center;" onclick="window.location.href='{% url 'simulator:csv' %}'">
-    <input class="mt-5 btn btn-lg" type="button" value="GET" onclick="window.location.href='{% url 'simulator:csv' %}'"
-           style="display: inline-block; color:white">
-</div>
 
+<div class="mt-3">
+    <a href="{% url 'simulator:csv' %}">
+  <img class="mx-auto d-block" src="{% static 'images/pic1.png' %}" style="height:8%;" />
+</a>
+</div>
 
 <div >
     <div class="row mt-5">

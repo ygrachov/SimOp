@@ -8,7 +8,7 @@
 <h2>How does it work? </h2></p>
 </div>
 <div class="row mt-4 ml-5">
-<div class="col xsm" style="font-size:180%">
+<div class="col xsm" style="font-size:150%; margin-left: auto; margin-right: auto ">
     <ol>
 <li>Please have all simulation parameters ready or use the default ones before proceeding</li>
         <li>Press "Enter" to input your variables</li>
@@ -20,7 +20,8 @@
        onclick="window.location.href='{% url 'simulator:form' %}'">
 </div>
 <div class="col xsm mr-0">
-    <img class="w-75 mh-100 ml-5" src="{% static 'images/python_call_center.png' %}"
+    <img src="{% static 'images/python_call_center.png' %}"
+         style='margin-left: auto; margin-right: auto; width: 100%; object-fit: contain'
          alt="call center simulation modelling with python">
 </div>
 </div></p>
@@ -30,7 +31,7 @@
 <div class="mt-5 ml-5 pl-5 text-center">
 <h2>About </h2></p>
 </div>
-<div class='ml-5 mr-5 pl-3 pr-5 text-justify' style="margin-top:1%; font-size:180%">
+<div class='ml-5 text-justify' style="margin-top:1%; font-size:150%">
 <p>This project is an open-source call center simulation application primarily designed as a desktop app. It allows users
     to input various parameters and simulate a call center environment to test and analyze different scenarios.
     However, due to current server limitations, some inputs may be restricted. We welcome any contributions or feedback
