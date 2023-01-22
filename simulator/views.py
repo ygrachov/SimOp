@@ -133,6 +133,7 @@ class GetVars(FormView):
     """A FormView class that handles the rendering and processing of the input form.
     If input is valid it is being written to the database (table Createinput)"""
     form_class = InputForm
+    num = Uuid()
     template_name = 'simulator/form.html'
     success_url = reverse_lazy('simulator:launch')
 
@@ -141,7 +142,7 @@ class GetVars(FormView):
         the database and redirecting to the 'success_url'"""
         if form.is_valid():
             instance = form.save(commit=False)
-            uuid = num.id
+            uuid = self.num.id
             instance.uuid = uuid
             instance.save()
             response = redirect(self.get_success_url())
@@ -154,16 +155,14 @@ class GetVars(FormView):
 def launch(request):
     """Handles the execution of the simulation model, triggered by a valid form submission.
     This method uses all the necessary input from the user to initialize and run the simulation environment."""
-
+    uu_id = models.CreateInput.objects.values('uuid').last()['uuid']
     start = datetime.now()
     for simulation_number in range(models.CreateInput.objects.values('number_of_simulations').last()
                                    ['number_of_simulations']):
-        print(f'run {simulation_number}')
         CallCenter.env = simpy.Environment()
-        call_center = CallCenter(simulation_number, num.id)
+        call_center = CallCenter(simulation_number, uu_id)
         call_center.run()
     finish = datetime.now()
-    print(f' simulation took {finish - start}')
     return redirect('simulator:export')
 
 
@@ -178,6 +177,7 @@ def display_results(request):
 
 def export_csv(request):
     """writes simulation log file in '.csv' format and returns it as a response to be downloaded by the user"""
+    uu_id = models.CreateInput.objects.values('uuid').last()['uuid']
     response = HttpResponse(content_type='text/csv')
     response['Content-Disposition'] = 'attachment; filename="simulation_log.csv"'
     writer = csv.writer(response)
@@ -186,7 +186,7 @@ def export_csv(request):
                      'if_not_answering', 'answer_time', 'amd_time', 'if_dropped', 'wait_before_drop', 'wait_time',
                      'talk_time', 'clerical_time'])
 
-    results = models.GlobalResults.objects.filter(uuid=num.id).values_list('shift_started', 'shift_finished', 'run',
+    results = models.GlobalResults.objects.filter(uuid=uu_id).values_list('shift_started', 'shift_finished', 'run',
                                                                            'attempt_no', 'call_no', 'batch', 'queue',
                                                                            'spin', 'capacity',
                                                                            'attempt_started', 'if_unreachable',
@@ -198,8 +198,8 @@ def export_csv(request):
     for result in results:
         writer.writerow(result)
 
-    models.GlobalResults.objects.filter(uuid=num.id).delete()
-    models.CreateInput.objects.filter(uuid=num.id).delete()
+    models.GlobalResults.objects.filter(uuid=uu_id).delete()
+    models.CreateInput.objects.filter(uuid=uu_id).delete()
 
     return response
 
@@ -373,3 +373,4 @@ class IncomingCall:
         self.name = name
         self.patience = random.uniform(models.CreateInput.objects.values('p_h').last()['p_h'],
                                        models.CreateInput.objects.values('p_l').last()['p_l'])
+
