@@ -9,6 +9,7 @@ from datetime import datetime
 from django.http import HttpResponse
 import uuid
 import csv
+import os
 
 
 class Uuid:
@@ -16,9 +17,6 @@ class Uuid:
     The unique ID is stored as a string object self.id"""
     def __init__(self):
         self.id = uuid.uuid4().hex
-
-
-num = Uuid()
 
 
 class InputForm(ModelForm):
@@ -141,6 +139,7 @@ class GetVars(FormView):
         """Calls the clean method of the InputForm and handles a valid form submission by saving the data to
         the database and redirecting to the 'success_url'"""
         if form.is_valid():
+
             instance = form.save(commit=False)
             uuid = self.num.id
             instance.uuid = uuid
@@ -150,6 +149,7 @@ class GetVars(FormView):
             return response
         else:
             return super().form_invalid(form)
+
 
 
 def launch(request):
@@ -169,8 +169,9 @@ def launch(request):
 def display_results(request):
     """Renders the content of the resulting page after the simulation is completed. Displays the input values used
     in the simulation and provides a link to download the simulation log file."""
+    uu_id = models.CreateInput.objects.values('uuid').last()['uuid']
     template_name = 'simulator/export.html'
-    myvars = models.CreateInput.objects.filter(uuid=num.id).values().last()
+    myvars = models.CreateInput.objects.filter(uuid=uu_id).values().last()
     fields = InputForm()
     return render(request,  template_name=template_name, context={'myvars': myvars, 'form': fields})
 
@@ -187,16 +188,18 @@ def export_csv(request):
                      'talk_time', 'clerical_time'])
 
     results = models.GlobalResults.objects.filter(uuid=uu_id).values_list('shift_started', 'shift_finished', 'run',
-                                                                           'attempt_no', 'call_no', 'batch', 'queue',
-                                                                           'spin', 'capacity',
-                                                                           'attempt_started', 'if_unreachable',
-                                                                           'if_not_answering', 'answer_time',
-                                                                           'amd_time', 'if_dropped',
-                                                                           'wait_before_drop', 'wait_time', 'talk_time',
-                                                                           'clerical_time')
+                                                                          'attempt_no', 'call_no', 'batch', 'queue',
+                                                                          'spin', 'capacity',
+                                                                          'attempt_started', 'if_unreachable',
+                                                                          'if_not_answering', 'answer_time',
+                                                                          'amd_time', 'if_dropped',
+                                                                          'wait_before_drop', 'wait_time', 'talk_time',
+                                                                          'clerical_time')
 
     for result in results:
         writer.writerow(result)
+        response.flush()
+
 
     models.GlobalResults.objects.filter(uuid=uu_id).delete()
     models.CreateInput.objects.filter(uuid=uu_id).delete()
@@ -373,4 +376,3 @@ class IncomingCall:
         self.name = name
         self.patience = random.uniform(models.CreateInput.objects.values('p_h').last()['p_h'],
                                        models.CreateInput.objects.values('p_l').last()['p_l'])
-
