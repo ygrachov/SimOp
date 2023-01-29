@@ -185,7 +185,7 @@ def export_csv(request):
     writer.writerow(['shift_started', 'shift_finished', 'run', 'attempt_no', 'call_no', 'batch', 'queue', 'spin',
                      'capacity', 'attempt_started', 'if_unreachable',
                      'if_not_answering', 'answer_time', 'amd_time', 'if_dropped', 'wait_before_drop', 'wait_time',
-                     'talk_time', 'clerical_time'])
+                     'agent', 'talk_time', 'clerical_time'])
 
     results = models.GlobalResults.objects.filter(uuid=uu_id).values_list('shift_started', 'shift_finished', 'run',
                                                                           'attempt_no', 'call_no', 'batch', 'queue',
@@ -193,8 +193,8 @@ def export_csv(request):
                                                                           'attempt_started', 'if_unreachable',
                                                                           'if_not_answering', 'answer_time',
                                                                           'amd_time', 'if_dropped',
-                                                                          'wait_before_drop', 'wait_time', 'talk_time',
-                                                                          'clerical_time')
+                                                                          'wait_before_drop', 'wait_time', 'agent',
+                                                                          'talk_time', 'clerical_time')
 
     for result in results:
         writer.writerow(result)
@@ -246,15 +246,11 @@ class CallCenter:
         self.d_h = models.CreateInput.objects.values('d_h').last()['d_h']
         self.d_l = models.CreateInput.objects.values('d_l').last()['d_l']
         self.d_m = models.CreateInput.objects.values('d_m').last()['d_m']
-        # talk time parameters (high, low)
-        self.t_h = models.CreateInput.objects.values('t_h').last()['t_h']
-        self.t_l = models.CreateInput.objects.values('t_l').last()['t_l']
-        # clerical time parameters (high, low)
-        self.c_h = models.CreateInput.objects.values('c_h').last()['c_h']
-        self.c_l = models.CreateInput.objects.values('c_l').last()['c_l']
         self.queue = 0
         self.start = 0
         self.finish = 0
+        self.operators_list=[]
+
 
     def dial(self):
         """The dial method simulates the behavior of an autodialer and applies the logic of a funnel. It selects a
@@ -263,6 +259,9 @@ class CallCenter:
         calls ('talk') or not. If the attempt is not in the 'talk' list, the phone number becomes the last element of
         the call list. If it is in the 'talk' list, the accepting_call method is applied to that. Each batch is
         written to DB"""
+        for i in range(1, self.capacity+1):
+            operator = Operator(i)
+            self.operators_list.append(operator)
         record1 = models.GlobalResults(shift_started=self.env.now)
         record1.uuid = self.uuid
         record1.save()
@@ -348,12 +347,15 @@ class CallCenter:
                 if req.triggered:
                     wait_time = self.env.now - answer_time
                     update_rec_at.wait_time = wait_time
-                    talk_time = random.uniform(self.t_l, self.t_h)
+                    agent = self.operators_list.pop(0)
+                    update_rec_at.agent = agent.name
+                    talk_time = agent.talk_time()
                     update_rec_at.talk_time = talk_time
                     yield self.env.timeout(talk_time)
-                    clerical_time = random.uniform(self.c_l, self.c_h)
+                    clerical_time = agent.clerical_time()
                     update_rec_at.clerical_time = clerical_time
                     yield self.env.timeout(clerical_time)
+                    self.operators_list.append(agent)
                 else:
                     update_rec_at.if_dropped = 1
                     update_rec_at.wait_before_drop = self.env.now - answer_time
@@ -376,3 +378,45 @@ class IncomingCall:
         self.name = name
         self.patience = random.uniform(models.CreateInput.objects.values('p_h').last()['p_h'],
                                        models.CreateInput.objects.values('p_l').last()['p_l'])
+
+
+class Operator:
+    """TODO This class creates an instance of an agent who handles a call with specifics in talk_time and clerical_time"""
+    def __init__(self, name):
+        self.index = name
+        self.name = f'operator_{name}'
+        # talk time parameters (high, low)
+        self.t_h = models.CreateInput.objects.values('t_h').last()['t_h']
+        self.t_l = models.CreateInput.objects.values('t_l').last()['t_l']
+        # clerical time parameters (high, low)
+        self.c_h = models.CreateInput.objects.values('c_h').last()['c_h']
+        self.c_l = models.CreateInput.objects.values('c_l').last()['c_l']
+        if self.index % 3 == 0:
+            self.talk_manner = 'short'
+            self.clerical_manner = 'short'
+        elif self.index % 2 == 0:
+            self.talk_manner = 'long'
+            self.clerical_manner = 'long'
+        else:
+            self.talk_manner = 'normal'
+            self.clerical_manner = 'normal'
+
+    def talk_time(self):
+        if self.talk_manner == 'long':
+            talk_time = random.uniform(self.t_l * 1.1, self.t_h * 1.3)
+        elif self.talk_manner == 'short':
+            talk_time = random.uniform(self.t_l * 0.05, self.t_h * 0.7)
+        else:
+            talk_time = random.uniform(self.t_l, self.t_h)
+        return talk_time
+
+
+    def clerical_time(self):
+        if self.clerical_manner == 'long':
+            clerical_time = random.uniform(self.c_l * 1.1, self.c_h * 1.3)
+        elif self.clerical_manner == 'short':
+            clerical_time = random.uniform(self.c_l * 0.8, self.c_h * 0.7)
+        else:
+            clerical_time = random.uniform(self.c_l, self.c_h)
+        return clerical_time
+

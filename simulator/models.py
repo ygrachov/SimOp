@@ -68,7 +68,7 @@ class CreateInput(models.Model):
 
 class GlobalResults(models.Model):
     shift_started = models.CharField(null=True, max_length=10)
-    uuid = models.CharField(null=True, max_length=10)
+    uuid = models.CharField(null=True, max_length=100)
     run = models.IntegerField(null=True)
     attempt_no = models.IntegerField(null=True)
     call_no = models.IntegerField(null=True)
@@ -84,6 +84,7 @@ class GlobalResults(models.Model):
     if_dropped = models.IntegerField(null=True)
     wait_before_drop = models.FloatField(null=True)
     wait_time = models.FloatField(null=True)
+    agent = models.CharField(null=True, max_length=100)
     talk_time = models.FloatField(null=True)
     clerical_time = models.FloatField(null=True)
     shift_finished = models.CharField(null=True, max_length=100)
